@@ -1,0 +1,187 @@
+basePath: /v1
+definitions:
+  entity.ImageDocs:
+    properties:
+      ID:
+        type: string
+      image_bytes:
+        type: string
+      tour_id:
+        type: string
+    type: object
+  entity.TourDocs:
+    properties:
+      ID:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      description:
+        type: string
+      price:
+        type: integer
+      route:
+        type: string
+      tour_images:
+        items:
+          $ref: '#/definitions/entity.ImageDocs'
+        type: array
+      tour_videos:
+        items:
+          $ref: '#/definitions/entity.VideoDocs'
+        type: array
+      updated_at:
+        type: string
+    type: object
+  entity.VideoDocs:
+    properties:
+      ID:
+        type: string
+      tour_id:
+        type: string
+      video_bytes:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Using a translation service as an example
+  title: Go Clean Template API
+  version: "1.0"
+paths:
+  /tours:
+    get:
+      description: Fetch a list of all available tours.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.TourDocs'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all tours
+      tags:
+      - tours
+    post:
+      consumes:
+      - multipart/form-data
+      description: Create a new tour with images and videos.
+      parameters:
+      - description: Tour Description
+        in: formData
+        name: description
+        required: true
+        type: string
+      - description: Tour Route
+        in: formData
+        name: route
+        required: true
+        type: string
+      - description: Tour Price
+        in: formData
+        name: price
+        required: true
+        type: integer
+      - description: Tour Images (multiple allowed)
+        in: formData
+        name: images
+        type: file
+      - description: Tour Videos (multiple allowed)
+        in: formData
+        name: videos
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entity.TourDocs'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new tour
+      tags:
+      - tours
+  /tours/{id}:
+    get:
+      description: Fetch details of a specific tour by its UUID.
+      parameters:
+      - description: Tour ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.TourDocs'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a tour by ID
+      tags:
+      - tours
+  /tours/{id}/:
+    get:
+      description: Fetches images and videos for a specific tour by ID.Example http://localhost:8080/uploads/videos/4f72a1cb-6ed4-4f01-b38b-b605d3062236.mp4.
+      parameters:
+      - description: Tour ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns a list of image and video URLs.
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid Tour ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Tour not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get static files for a tour
+      tags:
+      - tours
+swagger: "2.0"

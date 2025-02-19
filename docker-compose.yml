@@ -1,0 +1,42 @@
+version: '3.9'
+services:
+
+  tourism-db:
+    container_name: tourism-db
+    image: postgres:15
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: tourism_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - app_network
+    env_file:
+      - .env
+
+  app:
+    container_name: app
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+       - tourism-db
+    networks:
+      - app_network
+    environment:
+        PG_URL: ${PG_URL}
+    env_file:
+      - .env
+#    volumes:
+#      - ./.env:/app/env
+
+networks:
+  app_network:
+    driver: bridge
+
+
+volumes:
+  pg-data:

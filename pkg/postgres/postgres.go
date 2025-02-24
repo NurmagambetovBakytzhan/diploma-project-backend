@@ -53,6 +53,9 @@ func (p *Postgres) Migrate() error {
 		&entity.Video{},
 		&entity.User{},
 		&entity.TourEvent{},
+		&entity.Purchase{},
+		&entity.TourCategory{},
+		&entity.TourLocation{},
 	)
 	if err != nil {
 		fmt.Errorf("Migrating entities to Postgres - err: %w", err)

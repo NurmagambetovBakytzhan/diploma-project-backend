@@ -9,12 +9,14 @@ import (
 	"tourism-backend/internal/entity"
 	"tourism-backend/internal/usecase"
 	"tourism-backend/pkg/logger"
+	"tourism-backend/pkg/payment"
 	"tourism-backend/utils"
 )
 
 type tourismRoutes struct {
 	t usecase.TourismInterface
 	l logger.Interface
+	p *payment.PaymentProcessor
 }
 
 // newTourismRoutes initializes tourism routes.
@@ -23,20 +25,131 @@ type tourismRoutes struct {
 // @description API for managing tourism-related data (tours, images, videos).
 // @host localhost:8080
 // @BasePath /api
-func newTourismRoutes(handler *gin.RouterGroup, t usecase.TourismInterface, l logger.Interface, csbn *casbin.Enforcer) {
-	r := &tourismRoutes{t, l}
+func newTourismRoutes(handler *gin.RouterGroup, t usecase.TourismInterface, l logger.Interface, csbn *casbin.Enforcer, payment *payment.PaymentProcessor) {
+	r := &tourismRoutes{t, l, payment}
 
 	h := handler.Group("/tours")
 	{
 		h.GET("/", r.GetTours)
 		h.GET("/:id", r.GetTourByID)
+		h.GET("/categories", r.GetAllCategories)
+		pay := h.Group("/payment")
+		pay.Use(utils.JWTAuthMiddleware())
+		{
+			pay.POST("/", r.PayTourEvent)
+		}
+
 		protected := h.Group("/provider")
 		protected.Use(utils.JWTAuthMiddleware(), utils.CasbinMiddleware(csbn))
 		{
 			protected.POST("/", r.CreateTour)
 			protected.POST("/tour-event", r.CreateTourEvent)
+			protected.POST("/tour-category", r.CreateTourCategory)
+			protected.POST("/tour-location", r.CreateTourLocation)
+			protected.GET("/tour-location/:id", r.GetTourLocationByID)
 		}
 	}
+}
+
+func (r *tourismRoutes) GetTourLocationByID(c *gin.Context) {
+	userID := utils.GetUserIDFromContext(c)
+
+	tourID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+	if !r.t.CheckTourOwner(tourID, userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized: You are not owner of this tour"})
+		return
+	}
+	tourLocation, err := r.t.GetTourLocationByID(tourID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, tourLocation)
+
+}
+
+func (r *tourismRoutes) CreateTourLocation(c *gin.Context) {
+	var createTourLocationDTO entity.CreateTourLocationDTO
+	if err := c.ShouldBind(&createTourLocationDTO); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userID := utils.GetUserIDFromContext(c)
+	if !r.t.CheckTourOwner(createTourLocationDTO.TourID, userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized: You are not owner of this tour"})
+		return
+	}
+
+	createdTourLocation, err := r.t.CreateTourLocation(&createTourLocationDTO)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"message": "Tour Location created successfully!", "Tour Location": createdTourLocation})
+}
+
+func (r *tourismRoutes) CreateTourCategory(c *gin.Context) {
+	var createTourCategoryDTO entity.CreateTourCategoryDTO
+	if err := c.ShouldBind(&createTourCategoryDTO); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userID := utils.GetUserIDFromContext(c)
+	if !r.t.CheckTourOwner(createTourCategoryDTO.TourID, userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized: You are not owner of this tour"})
+		return
+	}
+
+	createdTourCategory, err := r.t.CreateTourCategory(&createTourCategoryDTO)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"message": "Tour Category created successfully!", "Tour Category": createdTourCategory})
+
+}
+
+func (r *tourismRoutes) GetAllCategories(c *gin.Context) {
+	categories, err := r.t.GetAllCategories()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch tours"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"Categories": categories})
+}
+
+func (r *tourismRoutes) PayTourEvent(c *gin.Context) {
+	var purchaseRaw entity.TourPurchaseRequest
+	if err := c.ShouldBindJSON(&purchaseRaw); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	UserID := utils.GetUserIDFromContext(c)
+
+	purchase := entity.Purchase{
+		TourEventID: purchaseRaw.TourEventID,
+		UserID:      UserID,
+		Status:      "Processing",
+	}
+
+	processingPurchase, err := r.t.CreatePurchase(&purchase)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	r.p.PurchaseQueue <- processingPurchase
+
+	c.JSON(http.StatusOK, gin.H{"Purchase": processingPurchase})
 }
 
 // CreateTourEvent handles the creation of a new tour event related to some specific tour with images and videos.
@@ -61,30 +174,19 @@ func (r *tourismRoutes) CreateTourEvent(c *gin.Context) {
 	}
 
 	// Get User ID from JWTMiddleware
-	userIDStr, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	// Convert user_id string to UUID
-	userID, err := uuid.Parse(userIDStr.(string))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID format"})
-		return
-	}
+	userID := utils.GetUserIDFromContext(c)
 
 	if !r.t.CheckTourOwner(createTourEventDTO.TourID, userID) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: You are not owner of this tour"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized: You are not owner of this tour"})
 		return
 	}
 
 	tour := &entity.TourEvent{
-		TourID: createTourEventDTO.TourID,
-		Date:   createTourEventDTO.Date,
-		Price:  createTourEventDTO.Price,
-		Place:  createTourEventDTO.Place,
-		Amount: createTourEventDTO.Amount,
+		TourID:         createTourEventDTO.TourID,
+		Date:           createTourEventDTO.Date,
+		Price:          createTourEventDTO.Price,
+		Place:          createTourEventDTO.Place,
+		AmountOfPlaces: createTourEventDTO.AmountOfPlaces,
 	}
 
 	createdTourEvent, err := r.t.CreateTourEvent(tour)

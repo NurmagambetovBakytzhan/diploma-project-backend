@@ -20,6 +20,34 @@ func NewTourismUseCase(r *repo.TourismRepo) *TourismUseCase {
 	}
 }
 
+func (r *TourismUseCase) GetTourLocationByID(tourLocationID uuid.UUID) (*entity.TourLocation, error) {
+	return r.repo.GetTourLocationByID(tourLocationID)
+}
+
+func (r *TourismUseCase) CreateTourLocation(tourLocation *entity.CreateTourLocationDTO) (*entity.TourLocation, error) {
+	return r.repo.CreateTourLocation(tourLocation)
+}
+
+func (r *TourismUseCase) CreateTourCategory(tourCategory *entity.CreateTourCategoryDTO) (*entity.TourCategory, error) {
+	return r.repo.CreateTourCategory(tourCategory)
+}
+
+func (r *TourismUseCase) GetAllCategories() ([]entity.Category, error) {
+	categories, err := r.repo.GetAllCategories()
+	if err != nil {
+		return nil, err
+	}
+	return categories, nil
+}
+
+func (t *TourismUseCase) CreatePurchase(purchase *entity.Purchase) (*entity.Purchase, error) {
+	return t.repo.CreatePurchase(purchase)
+}
+
+func (t *TourismUseCase) PayTourEvent(purchase *entity.Purchase) error {
+	return t.repo.PayTourEvent(purchase)
+}
+
 func (t *TourismUseCase) CheckTourOwner(tourID uuid.UUID, userID uuid.UUID) bool {
 	return t.repo.CheckTourOwner(tourID, userID)
 }

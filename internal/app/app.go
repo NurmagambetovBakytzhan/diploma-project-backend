@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 	"tourism-backend/pkg/casbin"
+	"tourism-backend/pkg/payment"
 
 	"github.com/gin-gonic/gin"
 
@@ -59,8 +60,11 @@ func Run(cfg *config.Config) {
 	// Casbin
 	csbn := casbin.InitCasbin()
 
+	// Payment Processor
+	paymentProcessor := payment.NewPaymentProcessor(10, tourismUseCase)
+
 	// New Router
-	v1.NewRouter(handler, l, service, csbn)
+	v1.NewRouter(handler, l, service, csbn, paymentProcessor)
 	httpServer := httpserver.New(handler, httpserver.Port(cfg.HTTP.Port))
 
 	// Waiting signal

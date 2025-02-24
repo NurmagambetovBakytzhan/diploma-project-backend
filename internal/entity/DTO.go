@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+type TourPurchaseRequest struct {
+	TourEventID uuid.UUID `json:"tour_event_id"`
+}
+
 type CreateTourDTO struct {
 	Description string `json:"description"`
 	Route       string `json:"route"`
@@ -26,9 +30,20 @@ type LoginUserDTO struct {
 }
 
 type CreateTourEventDTO struct {
-	Date   time.Time `json:"date" gorm:"not null"`
-	Price  float64   `json:"price" gorm:"not null"`
-	Place  string    `json:"place" gorm:"not null"`
-	TourID uuid.UUID `json:"tour_id" gorm:"type:uuid;index"`
-	Amount float64   `json:"amount" gorm:"not null"`
+	Date           time.Time `json:"date" gorm:"not null"`
+	Price          float64   `json:"price" gorm:"not null"`
+	Place          string    `json:"place" gorm:"not null"`
+	TourID         uuid.UUID `json:"tour_id" gorm:"type:uuid;index"`
+	AmountOfPlaces float64   `json:"amount_of_places" gorm:"not null"`
+}
+
+type CreateTourCategoryDTO struct {
+	TourID     uuid.UUID `json:"tour_id" gorm:"type:uuid;index"`
+	CategoryID uuid.UUID `json:"category_id" gorm:"type:uuid;index"`
+}
+
+type CreateTourLocationDTO struct {
+	TourID    uuid.UUID `json:"tour_id"`
+	Latitude  float64   `json:"latitude"`
+	Longitude float64   `json:"longitude"`
 }

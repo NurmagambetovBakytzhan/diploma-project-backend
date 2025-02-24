@@ -16,8 +16,14 @@ type (
 		CreateTour(tour *entity.Tour, imageFiles []*multipart.FileHeader, videFiles []*multipart.FileHeader) (*entity.Tour, error)
 		GetTours() ([]entity.Tour, error)
 		GetTourByID(ID string) (*entity.Tour, error)
+		GetAllCategories() ([]entity.Category, error)
 		CreateTourEvent(tourEvent *entity.TourEvent) (*entity.TourEvent, error)
 		CheckTourOwner(tourID uuid.UUID, userID uuid.UUID) bool
+		PayTourEvent(purchase *entity.Purchase) error
+		CreatePurchase(purchase *entity.Purchase) (*entity.Purchase, error)
+		CreateTourCategory(tourCategory *entity.CreateTourCategoryDTO) (*entity.TourCategory, error)
+		CreateTourLocation(tourLocation *entity.CreateTourLocationDTO) (*entity.TourLocation, error)
+		GetTourLocationByID(id uuid.UUID) (*entity.TourLocation, error)
 	}
 	UserInterface interface {
 		LoginUser(user *entity.LoginUserDTO) (string, error)

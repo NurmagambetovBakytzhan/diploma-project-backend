@@ -4,6 +4,7 @@ package v1
 import (
 	"github.com/casbin/casbin/v2"
 	"net/http"
+	"tourism-backend/pkg/payment"
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -23,7 +24,7 @@ import (
 // @version     1.0
 // @host        localhost:8080
 // @BasePath    /v1
-func NewRouter(handler *gin.Engine, l logger.Interface, service *usecase.Service, csbn *casbin.Enforcer) {
+func NewRouter(handler *gin.Engine, l logger.Interface, service *usecase.Service, csbn *casbin.Enforcer, paymentProcessor *payment.PaymentProcessor) {
 	// Options
 	handler.Use(gin.Logger())
 	handler.Use(gin.Recovery())
@@ -41,7 +42,7 @@ func NewRouter(handler *gin.Engine, l logger.Interface, service *usecase.Service
 	// Routers
 	h := handler.Group("/v1")
 	{
-		newTourismRoutes(h, service.TourUseCase, l, csbn)
+		newTourismRoutes(h, service.TourUseCase, l, csbn, paymentProcessor)
 		newUserRoutes(h, service.UserUseCase, l)
 		newAdminRoutes(h, service.AdminUseCase, l, csbn)
 	}

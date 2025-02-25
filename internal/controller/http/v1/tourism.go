@@ -53,6 +53,18 @@ func newTourismRoutes(handler *gin.RouterGroup, t usecase.TourismInterface, l lo
 	}
 }
 
+// GetFilteredTourEvents retrieves tour events based on filters.
+// @Summary Get filtered tour events
+// @Description Fetches a list of tour events based on filters like date, price, and category.
+// @Tags tours
+// @Produce json
+// @Param start_date query string false "Start date (YYYY-MM-DD)"
+// @Param end_date query string false "End date (YYYY-MM-DD)"
+// @Param category_ids query []string false "Category IDs"
+// @Param min_price query number false "Minimum price"
+// @Param max_price query number false "Maximum price"
+// @Success 200 {array} entity.TourEvent "List of filtered tour events"
+// @Router /tours/tour-events [get]
 func (r *tourismRoutes) GetFilteredTourEvents(c *gin.Context) {
 	var filter entity.TourEventFilter
 
@@ -95,6 +107,15 @@ func (r *tourismRoutes) GetFilteredTourEvents(c *gin.Context) {
 	c.JSON(http.StatusOK, tourEvents)
 }
 
+// GetTourLocationByID retrieves a tour location by ID.
+// @Summary Get tour location by ID
+// @Description Fetches details of a specific tour location.
+// @Tags provider
+// @Produce json
+// @Param id path string true "Tour Location ID"
+// @Security BearerAuth
+// @Success 200 {object} entity.TourLocation "Tour location details"
+// @Router /tours/provider/tour-location/{id} [get]
 func (r *tourismRoutes) GetTourLocationByID(c *gin.Context) {
 	userID := utils.GetUserIDFromContext(c)
 
@@ -117,6 +138,16 @@ func (r *tourismRoutes) GetTourLocationByID(c *gin.Context) {
 
 }
 
+// CreateTourLocation creates a new tour location.
+// @Summary Create a new tour location
+// @Description Adds a new location for tours.
+// @Tags provider
+// @Accept json
+// @Produce json
+// @Param location body entity.CreateTourLocationDTO true "Tour location details"
+// @Security BearerAuth
+// @Success 201 {object} entity.TourLocation "Created tour location"
+// @Router /tours/provider/tour-location [post]
 func (r *tourismRoutes) CreateTourLocation(c *gin.Context) {
 	var createTourLocationDTO entity.CreateTourLocationDTO
 	if err := c.ShouldBind(&createTourLocationDTO); err != nil {
@@ -138,6 +169,16 @@ func (r *tourismRoutes) CreateTourLocation(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Tour Location created successfully!", "Tour Location": createdTourLocation})
 }
 
+// CreateTourCategory creates a new tour category.
+// @Summary Create a new tour category
+// @Description Adds a new category for tours.
+// @Tags provider
+// @Accept json
+// @Produce json
+// @Param category body entity.CreateTourCategoryDTO true "Tour category details"
+// @Security BearerAuth
+// @Success 201 {object} entity.TourCategory "Created tour category"
+// @Router /tours/provider/tour-category [post]
 func (r *tourismRoutes) CreateTourCategory(c *gin.Context) {
 	var createTourCategoryDTO entity.CreateTourCategoryDTO
 	if err := c.ShouldBind(&createTourCategoryDTO); err != nil {
@@ -160,6 +201,13 @@ func (r *tourismRoutes) CreateTourCategory(c *gin.Context) {
 
 }
 
+// GetAllCategories retrieves all tour categories.
+// @Summary Get all tour categories
+// @Description Fetches a list of all available tour categories.
+// @Tags tours
+// @Produce json
+// @Success 200 {array} entity.TourCategory "List of tour categories"
+// @Router /tours/categories [get]
 func (r *tourismRoutes) GetAllCategories(c *gin.Context) {
 	categories, err := r.t.GetAllCategories()
 	if err != nil {
@@ -170,6 +218,16 @@ func (r *tourismRoutes) GetAllCategories(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"Categories": categories})
 }
 
+// PayTourEvent processes a payment for a tour event.
+// @Summary Pay for a tour event
+// @Description Processes a payment for a selected tour event.
+// @Tags payment
+// @Accept json
+// @Produce json
+// @Param payment body entity.TourPurchaseRequest true "Payment details"
+// @Security BearerAuth
+// @Success 200 {object} entity.Purchase "Purchase details"
+// @Router /tours/payment [post]
 func (r *tourismRoutes) PayTourEvent(c *gin.Context) {
 	var purchaseRaw entity.TourPurchaseRequest
 	if err := c.ShouldBindJSON(&purchaseRaw); err != nil {

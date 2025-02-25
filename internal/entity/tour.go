@@ -6,7 +6,7 @@ import (
 )
 
 type Tour struct {
-	gorm.Model
+	gorm.Model  `swaggerignore:"true"`
 	ID          uuid.UUID `json:"ID" gorm:"primaryKey;type:uuid;default:uuid_generate_v4()"`
 	Description string    `json:"description"`
 	Route       string    `json:"route"`
@@ -21,7 +21,7 @@ type Tour struct {
 }
 
 type Category struct {
-	gorm.Model
+	gorm.Model     `swaggerignore:"true"`
 	ID             uuid.UUID      `json:"ID" gorm:"primaryKey;type:uuid;default:uuid_generate_v4()"`
 	Name           string         `json:"name"`
 	TourCategories []TourCategory `gorm:"foreignKey:CategoryID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
@@ -35,8 +35,8 @@ type TourCategory struct {
 }
 
 type TourLocation struct {
-	gorm.Model
-	ID uuid.UUID `json:"ID" gorm:"primaryKey;type:uuid;default:uuid_generate_v4()"`
+	gorm.Model `swaggerignore:"true"`
+	ID         uuid.UUID `json:"ID" gorm:"primaryKey;type:uuid;default:uuid_generate_v4()"`
 
 	TourID uuid.UUID `json:"tour_id" gorm:"type:uuid;index"`
 	Tour   Tour      `gorm:"foreignKey:TourID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
@@ -46,17 +46,17 @@ type TourLocation struct {
 }
 
 type Image struct {
-	gorm.Model
-	ID       uuid.UUID `json:"ID" gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
-	TourID   uuid.UUID `json:"tour_id" gorm:"type:uuid;index"`
-	Tour     Tour      `gorm:"foreignKey:TourID;constraint:OnDelete:CASCADE;"`
-	ImageURL string    `json:"image_url"`
+	gorm.Model `swaggerignore:"true"`
+	ID         uuid.UUID `json:"ID" gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
+	TourID     uuid.UUID `json:"tour_id" gorm:"type:uuid;index"`
+	Tour       Tour      `gorm:"foreignKey:TourID;constraint:OnDelete:CASCADE;"`
+	ImageURL   string    `json:"image_url"`
 }
 
 type Video struct {
-	gorm.Model
-	ID       uuid.UUID `json:"ID" gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
-	TourID   uuid.UUID `json:"tour_id" gorm:"type:uuid;index"`
-	Tour     Tour      `gorm:"foreignKey:TourID;constraint:OnDelete:CASCADE;"`
-	VideoURL string    `json:"video_url"`
+	gorm.Model `swaggerignore:"true"`
+	ID         uuid.UUID `json:"ID" gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
+	TourID     uuid.UUID `json:"tour_id" gorm:"type:uuid;index"`
+	Tour       Tour      `gorm:"foreignKey:TourID;constraint:OnDelete:CASCADE;"`
+	VideoURL   string    `json:"video_url"`
 }

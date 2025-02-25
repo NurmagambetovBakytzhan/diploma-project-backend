@@ -29,6 +29,16 @@ func newAdminRoutes(handler *gin.RouterGroup, t usecase.AdminInterface, l logger
 	}
 }
 
+// GetUsers retrieves a list of users.
+// @Summary Get all users
+// @Description Fetches a list of all registered users.
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} entity.User
+// @Failure 500 {object} map[string]string
+// @Router /admin/users [get]
 func (r *adminRoutes) GetUsers(c *gin.Context) {
 	users, err := r.t.GetUsers()
 

@@ -6,7 +6,7 @@ import (
 )
 
 type User struct {
-	gorm.Model
+	gorm.Model          `swaggerignore:"true"`
 	ID                  uuid.UUID  `json:"ID" gorm:"primaryKey;type:uuid;default:uuid_generate_v4()"`
 	Username            string     `gorm:"unique;not null"`
 	Email               string     `gorm:"unique;not null"`

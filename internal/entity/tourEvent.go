@@ -7,7 +7,7 @@ import (
 )
 
 type TourEvent struct {
-	gorm.Model
+	gorm.Model     `swaggerignore:"true"`
 	ID             uuid.UUID `json:"ID" gorm:"primaryKey;type:uuid;default:uuid_generate_v4()"`
 	Tour           Tour
 	Date           time.Time  `json:"data" gorm:"not null"`

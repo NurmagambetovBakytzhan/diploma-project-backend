@@ -6,7 +6,7 @@ import (
 )
 
 type Purchase struct {
-	gorm.Model
+	gorm.Model  `swaggerignore:"true"`
 	ID          uuid.UUID `json:"ID" gorm:"primaryKey;type:uuid;default:uuid_generate_v4()"`
 	User        User      `json:"User"`
 	TourEvent   TourEvent `json:"TourEvent"`

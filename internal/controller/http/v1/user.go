@@ -30,6 +30,17 @@ func newUserRoutes(handler *gin.RouterGroup, t usecase.UserInterface, l logger.I
 	}
 }
 
+// LoginUser authenticates a user and returns a token.
+// @Summary Login a user
+// @Description Authenticates a user with their credentials and returns an access token.
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param credentials body entity.LoginUserDTO true "User login credentials"
+// @Success 200 {object} map[string]string "Authentication successful"
+// @Failure 400 {object} map[string]string "Bad request"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /users/login [post]
 func (r *userRoutes) LoginUser(c *gin.Context) {
 	var input entity.LoginUserDTO
 
@@ -46,6 +57,17 @@ func (r *userRoutes) LoginUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
+// RegisterUser registers a new user.
+// @Summary Register a new user
+// @Description Creates a new user account with the provided details.
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user body entity.CreateUserDTO true "User registration data"
+// @Success 201 {object} map[string]interface{} "User registered successfully"
+// @Failure 400 {object} map[string]string "Bad request"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /users [post]
 func (r *userRoutes) RegisterUser(c *gin.Context) {
 	var createUserDTO entity.CreateUserDTO
 	if err := c.ShouldBindJSON(&createUserDTO); err != nil {

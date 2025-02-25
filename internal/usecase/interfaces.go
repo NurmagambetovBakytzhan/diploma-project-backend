@@ -24,6 +24,7 @@ type (
 		CreateTourCategory(tourCategory *entity.CreateTourCategoryDTO) (*entity.TourCategory, error)
 		CreateTourLocation(tourLocation *entity.CreateTourLocationDTO) (*entity.TourLocation, error)
 		GetTourLocationByID(id uuid.UUID) (*entity.TourLocation, error)
+		GetFilteredTourEvents(*entity.TourEventFilter) ([]*entity.TourEvent, error)
 	}
 	UserInterface interface {
 		LoginUser(user *entity.LoginUserDTO) (string, error)

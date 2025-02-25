@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"mime/multipart"
 	"net/http"
+	"time"
 	"tourism-backend/internal/entity"
 	"tourism-backend/internal/usecase"
 	"tourism-backend/pkg/logger"
@@ -33,6 +34,7 @@ func newTourismRoutes(handler *gin.RouterGroup, t usecase.TourismInterface, l lo
 		h.GET("/", r.GetTours)
 		h.GET("/:id", r.GetTourByID)
 		h.GET("/categories", r.GetAllCategories)
+		h.GET("/tour-events", r.GetFilteredTourEvents)
 		pay := h.Group("/payment")
 		pay.Use(utils.JWTAuthMiddleware())
 		{
@@ -49,6 +51,48 @@ func newTourismRoutes(handler *gin.RouterGroup, t usecase.TourismInterface, l lo
 			protected.GET("/tour-location/:id", r.GetTourLocationByID)
 		}
 	}
+}
+
+func (r *tourismRoutes) GetFilteredTourEvents(c *gin.Context) {
+	var filter entity.TourEventFilter
+
+	if err := c.BindQuery(&filter); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	categoryIDs := c.QueryArray("category_ids")
+
+	for _, id := range categoryIDs {
+		parsedID, err := uuid.Parse(id)
+		if err == nil {
+			filter.CategoryIDs = append(filter.CategoryIDs, parsedID)
+		}
+	}
+
+	startDateStr := c.Query("start_date")
+	endDateStr := c.Query("end_date")
+	if startDateStr != "" && endDateStr != "" {
+		startDate, err1 := time.Parse("2006-01-02", startDateStr)
+		endDate, err2 := time.Parse("2006-01-02", endDateStr)
+		if err1 == nil && err2 == nil {
+			filter.StartDate = startDate
+			filter.EndDate = endDate
+		}
+	}
+	if minPrice := c.Query("min_price"); minPrice != "" {
+		filter.MinPrice = utils.ParseFloat(minPrice)
+	}
+	if maxPrice := c.Query("max_price"); maxPrice != "" {
+		filter.MaxPrice = utils.ParseFloat(maxPrice)
+	}
+
+	tourEvents, err := r.t.GetFilteredTourEvents(&filter)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch tour events"})
+		return
+	}
+
+	c.JSON(http.StatusOK, tourEvents)
 }
 
 func (r *tourismRoutes) GetTourLocationByID(c *gin.Context) {

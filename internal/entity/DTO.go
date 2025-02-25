@@ -47,3 +47,11 @@ type CreateTourLocationDTO struct {
 	Latitude  float64   `json:"latitude"`
 	Longitude float64   `json:"longitude"`
 }
+
+type TourEventFilter struct {
+	CategoryIDs []uuid.UUID `json:"category_ids,omitempty"`
+	StartDate   time.Time   `json:"start_date,omitempty"`
+	EndDate     time.Time   `json:"end_date,omitempty"`
+	MinPrice    float64     `json:"min_price,omitempty"`
+	MaxPrice    float64     `json:"max_price,omitempty"`
+}

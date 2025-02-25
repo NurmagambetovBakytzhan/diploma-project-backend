@@ -8,6 +8,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -90,4 +91,11 @@ func CasbinMiddleware(e *casbin.Enforcer) gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+func ParseFloat(value string) float64 {
+	if v, err := strconv.ParseFloat(value, 64); err == nil {
+		return v
+	}
+	return 0
 }

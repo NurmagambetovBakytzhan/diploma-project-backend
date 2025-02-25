@@ -25,6 +25,43 @@ func NewTourismRepo(pg *postgres.Postgres) *TourismRepo {
 	return &TourismRepo{pg}
 }
 
+func (r *TourismRepo) GetFilteredTourEvents(filter *entity.TourEventFilter) ([]*entity.TourEvent, error) {
+	var tourEvents []*entity.TourEvent
+
+	query := r.PG.Conn.
+		Joins("JOIN tours ON tours.id = tour_events.tour_id").
+		Joins("JOIN tour_categories ON tour_categories.tour_id = tours.id").
+		Where("tour_events.is_opened = ?", true) // Fetch only open tours
+
+	// Filter by categories
+	if len(filter.CategoryIDs) > 0 {
+		query = query.Where("tour_categories.category_id IN ?", filter.CategoryIDs)
+	}
+
+	// Filter by start date
+	if !filter.StartDate.IsZero() {
+		query = query.Where("tour_events.date >= ?", filter.StartDate)
+	}
+
+	// Filter by end date
+	if !filter.EndDate.IsZero() {
+		query = query.Where("tour_events.date <= ?", filter.EndDate)
+	}
+
+	// Filter by budget
+	if filter.MinPrice > 0 {
+		query = query.Where("tour_events.price >= ?", filter.MinPrice)
+	}
+	if filter.MaxPrice > 0 {
+		query = query.Where("tour_events.price <= ?", filter.MaxPrice)
+	}
+	fmt.Println(filter.MaxPrice)
+
+	// Execute the query
+	err := query.Preload("Tour").Find(&tourEvents).Error
+	return tourEvents, err
+}
+
 func (r *TourismRepo) GetTourLocationByID(tourLocationID uuid.UUID) (*entity.TourLocation, error) {
 	var tourLocation entity.TourLocation
 	err := r.PG.Conn.Where("tour_id = ?", tourLocationID).First(&tourLocation).Error
@@ -211,7 +248,6 @@ func (r *TourismRepo) CreateTour(tour *entity.Tour, imageFiles []*multipart.File
 		}
 
 		// Save images inside the transaction
-		var imagePaths []entity.Image
 		for _, file := range imageFiles {
 			filename := uuid.New().String() + filepath.Ext(file.Filename)
 			filespath := "./uploads/images/" + filename
@@ -219,12 +255,13 @@ func (r *TourismRepo) CreateTour(tour *entity.Tour, imageFiles []*multipart.File
 			if err := r.saveFile(file, filespath); err != nil {
 				return err
 			}
-			// Append the image record to the list
-			imagePaths = append(imagePaths, entity.Image{ID: uuid.New(), ImageURL: filespath, TourID: tour.ID})
+			image := &entity.Image{ImageURL: filespath, TourID: tour.ID}
+			if err := tx.Create(&image).Error; err != nil {
+				return err
+			}
 		}
 
 		// Save videos inside the transaction
-		var videoPaths []entity.Video
 		for _, file := range videoFiles {
 			filename := uuid.New().String() + filepath.Ext(file.Filename)
 			filespath := "./uploads/videos/" + filename
@@ -233,21 +270,11 @@ func (r *TourismRepo) CreateTour(tour *entity.Tour, imageFiles []*multipart.File
 				return err
 			}
 			// Append the video record to the list
-			videoPaths = append(videoPaths, entity.Video{ID: uuid.New(), VideoURL: filespath, TourID: tour.ID})
-		}
-
-		// Insert image and video records into the database
-		if len(imagePaths) > 0 {
-			if err := tx.Create(&imagePaths).Error; err != nil {
+			video := &entity.Video{VideoURL: filespath, TourID: tour.ID}
+			if err := tx.Create(&video).Error; err != nil {
 				return err
 			}
 		}
-		if len(videoPaths) > 0 {
-			if err := tx.Create(&videoPaths).Error; err != nil {
-				return err
-			}
-		}
-
 		return nil
 	})
 

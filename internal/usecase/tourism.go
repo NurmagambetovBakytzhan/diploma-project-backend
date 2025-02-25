@@ -20,6 +20,10 @@ func NewTourismUseCase(r *repo.TourismRepo) *TourismUseCase {
 	}
 }
 
+func (r *TourismUseCase) GetFilteredTourEvents(filter *entity.TourEventFilter) ([]*entity.TourEvent, error) {
+	return r.repo.GetFilteredTourEvents(filter)
+}
+
 func (r *TourismUseCase) GetTourLocationByID(tourLocationID uuid.UUID) (*entity.TourLocation, error) {
 	return r.repo.GetTourLocationByID(tourLocationID)
 }
